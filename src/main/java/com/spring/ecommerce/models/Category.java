@@ -1,9 +1,16 @@
 package com.spring.ecommerce.models;
 
+import jakarta.persistence.*;
 import lombok.Data;
 
+import java.util.UUID;
+
 @Data
+@Entity
+@Table(name = "categories")
 public class Category {
-    private long categoryId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
+    private UUID categoryId;
     private String categoryName;
 }
