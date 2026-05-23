@@ -1,7 +1,10 @@
 package com.spring.ecommerce.services;
 
+import com.spring.ecommerce.dto.CategoryDTO;
+import com.spring.ecommerce.dto.CategoryResponse;
 import com.spring.ecommerce.models.Category;
 import com.spring.ecommerce.repositories.CategoryRepository;
+import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -11,33 +14,43 @@ import java.util.List;
 @Service
 public class CategoryService implements CategoryServiceInterface {
     private final CategoryRepository categoryRepository;
+    private final ModelMapper modelMapper;
 
-    public CategoryService(CategoryRepository categoryRepository) {
+    public CategoryService(CategoryRepository categoryRepository, ModelMapper modelMapper) {
         this.categoryRepository = categoryRepository;
+        this.modelMapper = modelMapper;
     }
 
     @Override
-    public List<Category> getAllCategories() {
-        return categoryRepository.findAll();
+    public CategoryResponse getAllCategories() {
+        List<Category> categories = categoryRepository.findAll();
+
+        List<CategoryDTO> categoryDTOS = categories.stream().map(category -> modelMapper.map(category, CategoryDTO.class)).toList();
+
+        CategoryResponse categoryResponse = new CategoryResponse();
+        categoryResponse.setCategories(categoryDTOS);
+
+        return categoryResponse;
     }
 
     @Override
-    public Category createCategory(Category category) {
-        String categoryName = normalizeCategoryName(category.getCategoryName());
+    public CategoryDTO createCategory(String name) {
+        String categoryName = normalizeCategoryName(name);
 
         if (categoryRepository.existsByCategoryNameIgnoreCase(categoryName)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category already exists");
         }
 
+        Category category = new Category();
         category.setCategoryName(categoryName);
-        return categoryRepository.save(category);
+        Category savedCategory = categoryRepository.save(category);
+
+        return modelMapper.map(savedCategory, CategoryDTO.class);
     }
 
     @Override
     public void deleteCategory(String name) {
-        String categoryName = normalizeCategoryName(name);
-
-        Category category = categoryRepository.findByCategoryNameIgnoreCase(categoryName)
+        Category category = categoryRepository.findByCategoryNameIgnoreCase(name)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
 
         categoryRepository.delete(category);

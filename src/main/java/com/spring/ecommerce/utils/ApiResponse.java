@@ -11,7 +11,6 @@ public class ApiResponse<T> {
     private final T data;
     private final String message;
     private final boolean success;
-    private String stack;
 
     public ApiResponse(int statusCode, T data, String message) {
         this.statusCode = statusCode;
@@ -19,11 +18,4 @@ public class ApiResponse<T> {
         this.message = message;
         this.success = statusCode < 400;
     }
-
-    // Overloaded constructor for errors (Includes stack trace)
-    public ApiResponse(int statusCode, T data, String message, String stack) {
-        this(statusCode, data, message); // Calls the first constructor
-        this.stack = stack;
-    }
-
 }
