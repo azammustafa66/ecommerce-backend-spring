@@ -6,7 +6,7 @@ import com.spring.ecommerce.dto.CategoryResponse;
 import java.util.List;
 
 public interface CategoryServiceInterface {
-    CategoryResponse getAllCategories();
+    CategoryResponse getAllCategories(Integer page, Integer size);
     CategoryDTO createCategory(String categoryName);
     void deleteCategory(String name);
     void updateCategory(String oldName, String newName);

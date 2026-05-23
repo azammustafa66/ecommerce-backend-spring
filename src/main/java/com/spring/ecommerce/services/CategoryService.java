@@ -5,6 +5,9 @@ import com.spring.ecommerce.dto.CategoryResponse;
 import com.spring.ecommerce.models.Category;
 import com.spring.ecommerce.repositories.CategoryRepository;
 import org.modelmapper.ModelMapper;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -22,8 +25,9 @@ public class CategoryService implements CategoryServiceInterface {
     }
 
     @Override
-    public CategoryResponse getAllCategories() {
-        List<Category> categories = categoryRepository.findAll();
+    public CategoryResponse getAllCategories(Integer page, Integer size) {
+        Pageable pageable = PageRequest.of(page, size);
+        Page<Category> categories = categoryRepository.findAll(pageable);
 
         List<CategoryDTO> categoryDTOS = categories.stream().map(category -> modelMapper.map(category, CategoryDTO.class)).toList();
 

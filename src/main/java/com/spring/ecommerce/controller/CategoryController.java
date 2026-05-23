@@ -21,8 +21,8 @@ public class CategoryController {
     }
 
     @GetMapping("/public/categories")
-    public ResponseEntity<ApiResponse<CategoryResponse>> getAllCategories() {
-        CategoryResponse categories = categoryService.getAllCategories();
+    public ResponseEntity<ApiResponse<CategoryResponse>> getAllCategories(@RequestParam(name = "page") Integer page, @RequestParam(name = "size") Integer size) {
+        CategoryResponse categories = categoryService.getAllCategories(page, size);
 
         return ResponseEntity.ok(new ApiResponse<>(200, categories, "Categories fetched successfully"));
     }
