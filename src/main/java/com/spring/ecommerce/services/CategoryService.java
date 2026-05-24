@@ -15,7 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import java.util.List;
 
 @Service
-public class CategoryService implements CategoryServiceInterface {
+public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final ModelMapper modelMapper;
 
@@ -24,20 +24,38 @@ public class CategoryService implements CategoryServiceInterface {
         this.modelMapper = modelMapper;
     }
 
-    @Override
-    public CategoryResponse getAllCategories(Integer page, Integer size) {
+    public CategoryResponse getAllCategories(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
-        Page<Category> categories = categoryRepository.findAll(pageable);
+        Page<Category> categoryPage = categoryRepository.findAll(pageable);
+        List<Category> categories = categoryPage.getContent();
 
         List<CategoryDTO> categoryDTOS = categories.stream().map(category -> modelMapper.map(category, CategoryDTO.class)).toList();
 
-        CategoryResponse categoryResponse = new CategoryResponse();
-        categoryResponse.setCategories(categoryDTOS);
-
-        return categoryResponse;
+        return CategoryResponse.builder()
+                .categories(categoryDTOS)
+                .page(categoryPage.getNumber())
+                .size(categoryPage.getSize())
+                .totalPages(categoryPage.getTotalPages())
+                .lastPage(categoryPage.isLast())
+                .totalElements(categoryPage.getTotalElements())
+                .build();
     }
 
-    @Override
+    public List<CategoryDTO> searchCategories(String name) {
+        String categoryName = normalizeCategoryName(name);
+
+        List<Category> categories =
+                categoryRepository.findByCategoryNameContainingIgnoreCase(categoryName);
+
+        if (categories.isEmpty()) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "No categories found");
+        }
+
+        return categories.stream()
+                .map(category -> modelMapper.map(category, CategoryDTO.class))
+                .toList();
+    }
+
     public CategoryDTO createCategory(String name) {
         String categoryName = normalizeCategoryName(name);
 
@@ -52,7 +70,6 @@ public class CategoryService implements CategoryServiceInterface {
         return modelMapper.map(savedCategory, CategoryDTO.class);
     }
 
-    @Override
     public void deleteCategory(String name) {
         Category category = categoryRepository.findByCategoryNameIgnoreCase(name)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
@@ -60,7 +77,6 @@ public class CategoryService implements CategoryServiceInterface {
         categoryRepository.delete(category);
     }
 
-    @Override
     public void updateCategory(String oldName, String newName) {
         String existingName = normalizeCategoryName(oldName);
         String updatedName = normalizeCategoryName(newName);

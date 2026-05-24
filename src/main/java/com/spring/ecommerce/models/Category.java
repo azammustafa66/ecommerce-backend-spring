@@ -1,8 +1,6 @@
 package com.spring.ecommerce.models;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.util.UUID;
@@ -14,7 +12,5 @@ public class Category {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID categoryId;
-    @NotBlank(message = "Category name cannot be empty")
-    @Size(min = 3, max = 20)
     private String categoryName;
 }
