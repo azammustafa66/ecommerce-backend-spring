@@ -4,6 +4,8 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.*;
 
+import java.util.UUID;
+
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
@@ -20,5 +22,5 @@ public class UpdateProductDTO {
     @PositiveOrZero(message = "Special price cannot be negative")
     private Double specialPrice;
 
-    private String categoryName;
+    private UUID categoryId;
 }

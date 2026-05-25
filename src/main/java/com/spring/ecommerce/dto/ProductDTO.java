@@ -14,7 +14,7 @@ public class ProductDTO {
     @NotBlank(message = "Product name cannot be empty")
     private String productName;
 
-    private String imageURL;
+    private String productImageUrl;
 
     @NotBlank(message = "Product description cannot be empty")
     private String description;

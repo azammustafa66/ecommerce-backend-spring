@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.UUID;
 
 @Service
 public class CategoryService {
@@ -70,21 +71,20 @@ public class CategoryService {
         return modelMapper.map(savedCategory, CategoryDTO.class);
     }
 
-    public void deleteCategory(String name) {
-        Category category = categoryRepository.findByCategoryNameIgnoreCase(name)
+    public void deleteCategory(UUID categoryId) {
+        Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
 
         categoryRepository.delete(category);
     }
 
-    public void updateCategory(String oldName, String newName) {
-        String existingName = normalizeCategoryName(oldName);
+    public void updateCategory(UUID categoryId, String newName) {
         String updatedName = normalizeCategoryName(newName);
 
-        Category category = categoryRepository.findByCategoryNameIgnoreCase(existingName)
+        Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
 
-        if (!existingName.equalsIgnoreCase(updatedName) && categoryRepository.existsByCategoryNameIgnoreCase(updatedName)) {
+        if (!category.getCategoryName().equalsIgnoreCase(updatedName) && categoryRepository.existsByCategoryNameIgnoreCase(updatedName)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Category already exists");
         }
 

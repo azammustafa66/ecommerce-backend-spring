@@ -20,6 +20,7 @@ public class Product {
     private Integer productStock;
     private Double price;
     private Double specialPrice;
+    private String productImageUrl;
 
     @ManyToOne
     @JoinColumn(name = "category_id")

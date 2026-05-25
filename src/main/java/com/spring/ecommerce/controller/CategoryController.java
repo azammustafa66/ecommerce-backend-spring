@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api")
@@ -41,9 +42,9 @@ public class CategoryController {
         return ResponseEntity.status(HttpStatus.CREATED).body(new ApiResponse<>(HttpStatus.CREATED.value(), response, "Category created successfully"));
     }
 
-    @DeleteMapping("/admin/categories/{name}")
-    public ResponseEntity<ApiResponse<String>> deleteCategory(@PathVariable String name) {
-        categoryService.deleteCategory(name);
+    @DeleteMapping("/admin/categories/{categoryId}")
+    public ResponseEntity<ApiResponse<String>> deleteCategory(@PathVariable UUID categoryId) {
+        categoryService.deleteCategory(categoryId);
 
         return ResponseEntity.ok(new ApiResponse<>(
                 200,
@@ -52,11 +53,11 @@ public class CategoryController {
         ));
     }
 
-    @PatchMapping("/admin/categories/{oldName}")
+    @PatchMapping("/admin/categories/{categoryId}")
     public ResponseEntity<ApiResponse<String>> updateCategory(
-            @PathVariable String oldName,
+            @PathVariable UUID categoryId,
             @Valid @RequestBody CategoryDTO body) {
-        categoryService.updateCategory(oldName, body.getCategoryName());
+        categoryService.updateCategory(categoryId, body.getCategoryName());
         return ResponseEntity.ok(new ApiResponse<>(200, null, "Category updated successfully"));
     }
 }
