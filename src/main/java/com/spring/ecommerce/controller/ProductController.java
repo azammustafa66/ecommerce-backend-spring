@@ -24,13 +24,17 @@ public class ProductController {
     }
 
     @GetMapping("")
-    public ResponseEntity<ApiResponse<ProductResponse>> getProducts(@RequestParam(name = "page", defaultValue = "0") Integer page, @RequestParam(name = "size", defaultValue = "10") Integer size) {
-        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), productService.getProducts(page, size), "Fetched all products successfully"));
+    public ResponseEntity<ApiResponse<ProductResponse>> getProducts(
+            @RequestParam(name = "page", defaultValue = "0") Integer page,
+            @RequestParam(name = "size", defaultValue = "10") Integer size,
+            @RequestParam(name = "sortBy", defaultValue = "createdAt") String sortBy,
+            @RequestParam(name = "direction", defaultValue = "desc") String direction) {
+        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK.value(), productService.getProducts(page, size, sortBy, direction), "Fetched all products successfully"));
     }
 
     @PostMapping("/{categoryId}")
-    public ResponseEntity<ApiResponse<ProductDTO>> addProduct(@Valid @RequestBody ProductDTO product, @PathVariable UUID categoryId) {
-        ProductDTO addedProduct = productService.addProduct(product, categoryId);
+    public ResponseEntity<ApiResponse<ProductDTO>> addProduct(@Valid @RequestBody ProductDTO product, @PathVariable UUID categoryId, MultipartFile productImage) throws IOException {
+        ProductDTO addedProduct = productService.addProduct(product, categoryId, productImage);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(new ApiResponse<>(HttpStatus.CREATED.value(), addedProduct, "Product added successfully"));

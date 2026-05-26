@@ -1,16 +1,14 @@
 package com.spring.ecommerce.services;
 
+import com.cloudinary.Cloudinary;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
-import java.time.LocalDateTime;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -18,6 +16,11 @@ import java.util.UUID;
 public class FileUploadService {
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp");
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
+    private final Cloudinary cloudinary;
+
+    public FileUploadService(Cloudinary cloudinary) {
+        this.cloudinary = cloudinary;
+    }
 
     public String upload(String objectType, UUID objectId, MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {
@@ -30,14 +33,14 @@ public class FileUploadService {
 
         String normalizedObjectType = normalizeObjectType(objectType);
         String extension = getValidatedExtension(file);
-        String fileName = normalizedObjectType + "-" + objectId + "-" + LocalDateTime.now() + "." + extension;
-        Path uploadDirectory = Path.of("images", normalizedObjectType);
-        Path filePath = uploadDirectory.resolve(fileName);
+        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), Map.of(
+                "folder", normalizedObjectType,
+                "public_id", normalizedObjectType + "-" + objectId,
+                "overwrite", true,
+                "resource_type", "image"
+        ));
 
-        Files.createDirectories(uploadDirectory);
-        Files.copy(file.getInputStream(), filePath, StandardCopyOption.REPLACE_EXISTING);
-
-        return fileName;
+        return uploadResult.get("secure_url").toString();
     }
 
     private String normalizeObjectType(String objectType) {
@@ -58,12 +61,12 @@ public class FileUploadService {
 
         String extension = originalFilename.substring(originalFilename.lastIndexOf('.') + 1).toLowerCase(Locale.ROOT);
         if (!ALLOWED_EXTENSIONS.contains(extension)) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only .jpg, .jpeg, and .png files are allowed");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only .jpg, .jpeg, .png and .webp files are allowed");
         }
 
         String contentType = file.getContentType();
         if (contentType == null || !ALLOWED_CONTENT_TYPES.contains(contentType.toLowerCase(Locale.ROOT))) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only JPEG and PNG images are allowed");
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Only .jpg, .jpeg, .png and .webp files are allowed");
         }
 
         return extension;

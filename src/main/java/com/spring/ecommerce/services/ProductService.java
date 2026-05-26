@@ -11,18 +11,28 @@ import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
+import java.util.Set;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 public class ProductService {
     private static final String DEFAULT_PRODUCT_IMAGE_URL = "https://placehold.co/600x400?text=Product";
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
+            "productName",
+            "price",
+            "specialPrice",
+            "productStock",
+            "createdAt",
+            "updatedAt"
+    );
 
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
@@ -36,9 +46,13 @@ public class ProductService {
         this.fileUploadService = fileUploadService;
     }
 
-    public ProductDTO addProduct(ProductDTO product, UUID categoryId) {
+    public ProductDTO addProduct(ProductDTO product, UUID categoryId, MultipartFile productImage) throws IOException {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category does not exist"));
+
+        if (productRepository.existsByProductNameIgnoreCaseAndCategory_CategoryId(product.getProductName(), categoryId)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Product already exists in this category");
+        }
 
         Product newProduct = modelMapper.map(product, Product.class);
         newProduct.setCategory(category);
@@ -47,15 +61,33 @@ public class ProductService {
         }
 
         Product savedProduct = productRepository.save(newProduct);
+        if (productImage != null && !productImage.isEmpty()) {
+            String imageUrl = fileUploadService.upload("product", savedProduct.getId(), productImage);
+            savedProduct.setProductImageUrl(imageUrl);
+            savedProduct = productRepository.save(savedProduct);
+        }
+
         return modelMapper.map(savedProduct, ProductDTO.class);
     }
 
-    public ProductResponse getProducts(Integer page, Integer size) {
-        Pageable pageable = PageRequest.of(page, size);
+    public ProductResponse getProducts(Integer page, Integer size, String sortBy, String direction) {
+        String validatedSortBy = validateSortBy(sortBy);
+        Sort sort = "asc".equalsIgnoreCase(direction)
+                ? Sort.by(validatedSortBy).ascending()
+                : Sort.by(validatedSortBy).descending();
+        Pageable pageable = PageRequest.of(page, size, sort);
         Page<Product> productPage = productRepository.findAll(pageable);
         List<Product> products = productPage.getContent();
-        return ProductResponse.builder().products(products).page(page).size(size).totalElements(productPage.getTotalElements()).totalPages(productPage.getTotalPages()).lastPage(productPage.isLast()).build();
+        return ProductResponse.builder().products(products).page(productPage.getNumber()).size(productPage.getSize()).totalElements(productPage.getTotalElements()).totalPages(productPage.getTotalPages()).lastPage(productPage.isLast()).build();
 
+    }
+
+    private String validateSortBy(String sortBy) {
+        if (sortBy == null || !ALLOWED_SORT_FIELDS.contains(sortBy)) {
+            return "createdAt";
+        }
+
+        return sortBy;
     }
 
     public ProductDTO updateProduct(UpdateProductDTO product, UUID productId) {
