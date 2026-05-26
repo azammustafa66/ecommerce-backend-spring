@@ -7,7 +7,6 @@ import com.spring.ecommerce.models.Category;
 import com.spring.ecommerce.models.Product;
 import com.spring.ecommerce.repositories.CategoryRepository;
 import com.spring.ecommerce.repositories.ProductRepository;
-import org.jspecify.annotations.NonNull;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,22 +17,23 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
-import java.nio.file.*;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 public class ProductService {
+    private static final String DEFAULT_PRODUCT_IMAGE_URL = "https://placehold.co/600x400?text=Product";
+
     private final ProductRepository productRepository;
     private final CategoryRepository categoryRepository;
     private final ModelMapper modelMapper;
+    private final FileUploadService fileUploadService;
 
-    public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository, ModelMapper modelMapper) {
+    public ProductService(ProductRepository productRepository, CategoryRepository categoryRepository, ModelMapper modelMapper, FileUploadService fileUploadService) {
         this.productRepository = productRepository;
         this.categoryRepository = categoryRepository;
         this.modelMapper = modelMapper;
+        this.fileUploadService = fileUploadService;
     }
 
     public ProductDTO addProduct(ProductDTO product, UUID categoryId) {
@@ -42,6 +42,9 @@ public class ProductService {
 
         Product newProduct = modelMapper.map(product, Product.class);
         newProduct.setCategory(category);
+        if (newProduct.getProductImageUrl() == null || newProduct.getProductImageUrl().isBlank()) {
+            newProduct.setProductImageUrl(DEFAULT_PRODUCT_IMAGE_URL);
+        }
 
         Product savedProduct = productRepository.save(newProduct);
         return modelMapper.map(savedProduct, ProductDTO.class);
@@ -99,30 +102,9 @@ public class ProductService {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product does not exist"));
 
-        String extension = getString(image);
-        String timestamp = DateTimeFormatter.ofPattern("yyyyMMddHHmmss").format(LocalDateTime.now());
-        String fileName = product.getId() + "-" + timestamp + extension;
-        Path imageDirectory = Path.of("images");
-        Path imagePath = imageDirectory.resolve(fileName);
-
-        Files.createDirectories(imageDirectory);
-        Files.copy(image.getInputStream(), imagePath, StandardCopyOption.REPLACE_EXISTING);
-
+        String fileName = fileUploadService.upload("product", product.getId(), image);
         product.setProductImageUrl(fileName);
         Product savedProduct = productRepository.save(product);
         return modelMapper.map(savedProduct, ProductDTO.class);
-    }
-
-    private static @NonNull String getString(MultipartFile image) {
-        if (image == null || image.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product image is required");
-        }
-
-        String originalFilename = image.getOriginalFilename();
-        if (originalFilename == null || originalFilename.isBlank() || !originalFilename.contains(".")) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Product image file name is invalid");
-        }
-
-        return originalFilename.substring(originalFilename.lastIndexOf('.'));
     }
 }

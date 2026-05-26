@@ -29,6 +29,4 @@ public class ProductDTO {
 
     @PositiveOrZero(message = "Special price cannot be negative")
     private Double specialPrice;
-
-    private CategoryDTO category;
 }
