@@ -79,7 +79,6 @@ public class ProductService {
         Page<Product> productPage = productRepository.findAll(pageable);
         List<Product> products = productPage.getContent();
         return ProductResponse.builder().products(products).page(productPage.getNumber()).size(productPage.getSize()).totalElements(productPage.getTotalElements()).totalPages(productPage.getTotalPages()).lastPage(productPage.isLast()).build();
-
     }
 
     private String validateSortBy(String sortBy) {
