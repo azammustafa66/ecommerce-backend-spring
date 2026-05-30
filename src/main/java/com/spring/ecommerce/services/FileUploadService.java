@@ -1,6 +1,7 @@
 package com.spring.ecommerce.services;
 
 import com.cloudinary.Cloudinary;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -13,14 +14,11 @@ import java.util.Set;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class FileUploadService {
     private static final Set<String> ALLOWED_EXTENSIONS = Set.of("jpg", "jpeg", "png", "webp");
     private static final Set<String> ALLOWED_CONTENT_TYPES = Set.of("image/jpeg", "image/png", "image/webp");
     private final Cloudinary cloudinary;
-
-    public FileUploadService(Cloudinary cloudinary) {
-        this.cloudinary = cloudinary;
-    }
 
     public String upload(String objectType, UUID objectId, MultipartFile file) throws IOException {
         if (file == null || file.isEmpty()) {

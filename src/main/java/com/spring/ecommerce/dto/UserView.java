@@ -1,5 +1,6 @@
 package com.spring.ecommerce.dto;
 
+import com.spring.ecommerce.models.AppRole;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,6 +19,6 @@ public class UserView {
     private String firstName;
     private String lastName;
     private String email;
-    private Set<RoleDTO> roles;
+    private Set<AppRole> roles;
     private List<AddressDTO> addresses;
 }

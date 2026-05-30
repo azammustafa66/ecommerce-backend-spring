@@ -4,6 +4,7 @@ import com.spring.ecommerce.dto.CategoryDTO;
 import com.spring.ecommerce.dto.CategoryResponse;
 import com.spring.ecommerce.models.Category;
 import com.spring.ecommerce.repositories.CategoryRepository;
+import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -16,14 +17,10 @@ import java.util.List;
 import java.util.UUID;
 
 @Service
+@RequiredArgsConstructor
 public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final ModelMapper modelMapper;
-
-    public CategoryService(CategoryRepository categoryRepository, ModelMapper modelMapper) {
-        this.categoryRepository = categoryRepository;
-        this.modelMapper = modelMapper;
-    }
 
     public CategoryResponse getAllCategories(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
