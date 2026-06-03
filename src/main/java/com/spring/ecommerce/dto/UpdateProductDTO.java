@@ -23,4 +23,5 @@ public class UpdateProductDTO {
     private Double specialPrice;
 
     private UUID categoryId;
+    private Boolean active;
 }

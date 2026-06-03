@@ -11,6 +11,7 @@ import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
@@ -22,6 +23,7 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final ModelMapper modelMapper;
 
+    @Transactional(readOnly = true)
     public CategoryResponse getAllCategories(int page, int size) {
         Pageable pageable = PageRequest.of(page, size);
         Page<Category> categoryPage = categoryRepository.findAll(pageable);
@@ -54,6 +56,7 @@ public class CategoryService {
                 .toList();
     }
 
+    @Transactional
     public CategoryDTO createCategory(String name) {
         String categoryName = normalizeCategoryName(name);
 
@@ -68,6 +71,7 @@ public class CategoryService {
         return modelMapper.map(savedCategory, CategoryDTO.class);
     }
 
+    @Transactional
     public void deleteCategory(UUID categoryId) {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category not found"));
@@ -75,6 +79,7 @@ public class CategoryService {
         categoryRepository.delete(category);
     }
 
+    @Transactional
     public void updateCategory(UUID categoryId, String newName) {
         String updatedName = normalizeCategoryName(newName);
 

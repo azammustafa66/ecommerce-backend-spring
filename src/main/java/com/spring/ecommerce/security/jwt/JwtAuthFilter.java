@@ -29,7 +29,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
-        String token = authHeader.replace("Bearer ", "");
+        String token = authHeader.substring(7);
         String email;
 
         try {

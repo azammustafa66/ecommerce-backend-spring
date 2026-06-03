@@ -23,7 +23,7 @@ public class Category {
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID categoryId;
     private String categoryName;
-    @OneToMany(mappedBy = "categoryId")
+    @OneToMany(mappedBy = "category")
     @Builder.Default
     List<Product> products = new ArrayList<>();
 }

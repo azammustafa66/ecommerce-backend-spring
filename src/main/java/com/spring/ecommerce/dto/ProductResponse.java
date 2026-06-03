@@ -1,6 +1,5 @@
 package com.spring.ecommerce.dto;
 
-import com.spring.ecommerce.models.Product;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,7 +12,7 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ProductResponse {
-    private List<Product> products;
+    private List<ProductDTO> products;
     private int page;
     private int size;
     private long totalElements;

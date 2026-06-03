@@ -30,15 +30,20 @@ public class FileUploadService {
         }
 
         String normalizedObjectType = normalizeObjectType(objectType);
-        String extension = getValidatedExtension(file);
-        Map uploadResult = cloudinary.uploader().upload(file.getBytes(), Map.of(
+        getValidatedExtension(file);
+        @SuppressWarnings("unchecked")
+        Map<String, Object> uploadResult = cloudinary.uploader().upload(file.getBytes(), Map.of(
                 "folder", normalizedObjectType,
                 "public_id", normalizedObjectType + "-" + objectId,
                 "overwrite", true,
                 "resource_type", "image"
         ));
 
-        return uploadResult.get("secure_url").toString();
+        Object secureUrl = uploadResult == null ? null : uploadResult.get("secure_url");
+        if (secureUrl == null) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Image upload failed");
+        }
+        return secureUrl.toString();
     }
 
     private String normalizeObjectType(String objectType) {

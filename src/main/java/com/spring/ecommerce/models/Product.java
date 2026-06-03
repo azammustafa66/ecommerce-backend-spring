@@ -40,6 +40,10 @@ public class Product {
 
     private String productImageUrl;
 
+    @Builder.Default
+    @Column(nullable = false)
+    private boolean active = true;
+
     @CreationTimestamp
     @Column(updatable = false)
     private LocalDateTime createdAt;

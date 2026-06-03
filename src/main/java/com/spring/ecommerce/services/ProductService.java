@@ -7,6 +7,7 @@ import com.spring.ecommerce.models.Category;
 import com.spring.ecommerce.models.Product;
 import com.spring.ecommerce.repositories.CategoryRepository;
 import com.spring.ecommerce.repositories.ProductRepository;
+import org.springframework.transaction.annotation.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.modelmapper.ModelMapper;
 import org.springframework.data.domain.Page;
@@ -40,7 +41,9 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final ModelMapper modelMapper;
     private final FileUploadService fileUploadService;
+    private final CartService cartService;
 
+    @Transactional
     public ProductDTO addProduct(ProductDTO product, UUID categoryId, MultipartFile productImage) throws IOException {
         Category category = categoryRepository.findById(categoryId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category does not exist"));
@@ -65,6 +68,7 @@ public class ProductService {
         return modelMapper.map(savedProduct, ProductDTO.class);
     }
 
+    @Transactional(readOnly = true)
     public ProductResponse getProducts(Integer page, Integer size, String sortBy, String direction) {
         String validatedSortBy = validateSortBy(sortBy);
         Sort sort = "asc".equalsIgnoreCase(direction)
@@ -72,7 +76,9 @@ public class ProductService {
                 : Sort.by(validatedSortBy).descending();
         Pageable pageable = PageRequest.of(page, size, sort);
         Page<Product> productPage = productRepository.findAll(pageable);
-        List<Product> products = productPage.getContent();
+        List<ProductDTO> products = productPage.getContent().stream()
+                .map(p -> modelMapper.map(p, ProductDTO.class))
+                .toList();
         return ProductResponse.builder().products(products).page(productPage.getNumber()).size(productPage.getSize()).totalElements(productPage.getTotalElements()).totalPages(productPage.getTotalPages()).lastPage(productPage.isLast()).build();
     }
 
@@ -84,9 +90,13 @@ public class ProductService {
         return sortBy;
     }
 
+    @Transactional
     public ProductDTO updateProduct(UpdateProductDTO product, UUID productId) {
         Product existingProduct = productRepository.findById(productId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product does not exist"));
+
+        double oldUnitPrice = effectiveUnitPrice(existingProduct);
+        Integer oldStock = existingProduct.getProductStock();
 
         if (product.getProductName() != null) {
             existingProduct.setProductName(product.getProductName());
@@ -108,6 +118,10 @@ public class ProductService {
             existingProduct.setSpecialPrice(product.getSpecialPrice());
         }
 
+        if (product.getActive() != null) {
+            existingProduct.setActive(product.getActive());
+        }
+
         if (product.getCategoryId() != null) {
             Category category = categoryRepository.findById(product.getCategoryId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Category does not exist"));
@@ -115,15 +129,34 @@ public class ProductService {
         }
 
         Product savedProduct = productRepository.save(existingProduct);
+
+        double newUnitPrice = effectiveUnitPrice(savedProduct);
+        if (Double.compare(oldUnitPrice, newUnitPrice) != 0) {
+            cartService.onProductPriceChanged(productId, newUnitPrice);
+        }
+        Integer newStock = savedProduct.getProductStock();
+        if (newStock != null && (oldStock == null || newStock < oldStock)) {
+            cartService.onProductStockChanged(productId, newStock);
+        }
+
         return modelMapper.map(savedProduct, ProductDTO.class);
     }
 
+    @Transactional
     public void deleteProduct(UUID productId) {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product does not exist"));
+        cartService.onProductDeleted(productId);
         productRepository.delete(product);
     }
 
+    private double effectiveUnitPrice(Product product) {
+        return product.getSpecialPrice() != null && product.getSpecialPrice() > 0
+                ? product.getSpecialPrice()
+                : (product.getPrice() != null ? product.getPrice() : 0.0);
+    }
+
+    @Transactional
     public ProductDTO updateProductImage(UUID productId, MultipartFile image) throws IOException {
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Product does not exist"));
